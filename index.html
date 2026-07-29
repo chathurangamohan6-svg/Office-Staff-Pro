@@ -11,10 +11,26 @@
     <meta name="apple-mobile-web-app-title" content="Office Staff Pro">
     <meta name="theme-color" content="#4f46e5">
 
-    <!-- Firebase SDK (Google Cloud Backend) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDK (Google Cloud Backend) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyDqStNrEGXaOQhnTFEAQNsprjWT9Ad7I1U",
+        authDomain: "officestaffpro.firebaseapp.com",
+        projectId: "officestaffpro",
+        storageBucket: "officestaffpro.firebasestorage.app",
+        messagingSenderId: "87987153313",
+        appId: "1:87987153313:web:d519d22b763212ed5d83e0",
+        measurementId: "G-GBZE5ZDZM4"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+    </script>
 
     <style>
         :root {
