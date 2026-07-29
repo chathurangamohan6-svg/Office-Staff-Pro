@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Office Staff Pro - Mobile & Web Edition</title>
     
-    <!-- PWA Meta Tags for Android & iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Office Staff Pro">
@@ -276,7 +275,7 @@
             </div>
         </div>
 
-        <!-- 2. SIGN UP SCREEN (NEW ACCOUNT) -->
+        <!-- 2. SIGN UP SCREEN -->
         <div id="signupScreen" class="screen-box">
             <div class="auth-card">
                 <h2>Office Staff Pro</h2>
@@ -364,15 +363,23 @@
                 </div>
             </div>
 
-            <!-- Attendance & OT -->
+            <!-- Attendance Settings & Clock In/Out -->
             <div class="card">
-                <h3>⏰ පැමිණීම සහ OT / Attendance & OT</h3>
-                <label>තත්වය / Status:</label>
+                <h3>⏰ පැමිණීම සහ වැඩ කරන වෙලාවන් / Attendance & Timing</h3>
+                
+                <div style="background: var(--bg-color); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-color);">
+                    <label style="color: var(--primary); font-weight: bold;">නිවැරදි වැඩ නිම වන වෙලාව (Standard Off Time):</label>
+                    <input type="time" id="standardOffTime" value="16:30" onchange="saveStandardTime()">
+                    <p style="font-size: 11px; color: #9ca3af; margin: 2px 0 0;">මෙම වෙලාවට පසු පිටවන අමතර කාලය OT ලෙස ගණන් බැලේ.</p>
+                </div>
+
+                <label>தත්වය / Status:</label>
                 <p id="currentStatus" style="font-weight: bold; color: var(--danger); font-size: 12px; margin: 5px 0 10px;">දැනට වැඩ අවසන් / Not Clocked In</p>
-                <label>පැයකට OT ගෙවන මුදල (Hourly OT Rate Rs.):</label>
-                <input type="number" id="hourlyRate" placeholder="උදා: 500">
+                
+                <p id="clockInfoDisplay" style="font-size: 12px; margin-bottom: 10px; color: var(--text-color);"></p>
+
                 <button class="btn btn-success" id="inOutBtn" onclick="toggleAttendance()">වැඩට පැමිණීම සටහන් කරන්න / Clock In</button>
-                <p id="otSummaryText" style="font-size: 11px; color: var(--success); font-weight: bold; margin-top: 8px; text-align: center;"></p>
+                <p id="attendanceHistoryText" style="font-size: 12px; font-weight: bold; margin-top: 10px; color: var(--success); text-align: center;"></p>
             </div>
 
             <!-- Salary & Finance -->
@@ -380,6 +387,10 @@
                 <h3>💰 වැටුප් සහ මූල්‍ය / Salary & Finance</h3>
                 <label>මූලික වැටුප / Basic Salary (Rs.):</label>
                 <input type="number" id="basicSalary" oninput="calculateAll()" placeholder="උදා: 50000">
+                
+                <label>පැයකට OT ගෙවන මුදල (Hourly OT Rate Rs.):</label>
+                <input type="number" id="hourlyRate" oninput="calculateAll()" placeholder="උදා: 500">
+
                 <label>මාසික වියදම් / Expenses (Rs.):</label>
                 <input type="number" id="monthExpense" oninput="calculateAll()" placeholder="උදා: 5000">
             </div>
@@ -433,8 +444,7 @@
 
     <script>
         let isClockedIn = false;
-        let clockInTime = null;
-        let todayTotalOT = 0;
+        let clockInTimeObj = null;
         let deferredPrompt;
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -456,12 +466,12 @@
         }
 
         window.onload = function() {
-            // Check if user already exists, if not set a default demo account
             if(!localStorage.getItem('sysPass')) {
                 localStorage.setItem('sysPass', '1234');
                 localStorage.setItem('empName', 'අභිනේශ්');
                 localStorage.setItem('empEmail', 'admin@office.com');
                 localStorage.setItem('empPhone', '0771234567');
+                localStorage.setItem('standardOffTime', '16:30');
             }
 
             if(localStorage.getItem('isLoggedIn') === "true") {
@@ -617,28 +627,64 @@
             document.getElementById('editDesig').value = desig;
         }
 
+        function saveStandardTime() {
+            let t = document.getElementById('standardOffTime').value;
+            localStorage.setItem('standardOffTime', t);
+        }
+
         function toggleAttendance() {
             let statusText = document.getElementById('currentStatus');
+            let infoDisplay = document.getElementById('clockInfoDisplay');
             let btn = document.getElementById('inOutBtn');
-            let rateInput = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            let historyText = document.getElementById('attendanceHistoryText');
+
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = now.toLocaleString('default', { month: 'long' });
+            let day = now.getDate();
+            let timeStr = now.toLocaleTimeString();
 
             if (!isClockedIn) {
                 isClockedIn = true;
-                clockInTime = new Date();
-                statusText.innerText = "වැඩ කරමින් පවතී... / Clocked In at: " + clockInTime.toLocaleTimeString();
+                clockInTimeObj = now;
+                
+                let logMsg = `Clock In: දවස ${day}, මාසය ${month}, වසර ${year} - වෙලාව ${timeStr}`;
+                localStorage.setItem('lastClockInLog', logMsg);
+
+                statusText.innerText = "වැඩ කරමින් පවතී... / Clocked In";
                 statusText.style.color = "var(--success)";
+                infoDisplay.innerText = logMsg;
                 btn.innerText = "වැඩ අවසන් කිරීම / Clock Out";
                 btn.className = "btn btn-danger";
+                historyText.innerText = "";
             } else {
-                let diffHours = ((new Date() - clockInTime) / (1000 * 60 * 60)).toFixed(1);
-                todayTotalOT = diffHours * rateInput;
-                localStorage.setItem('savedOT', todayTotalOT);
-                localStorage.setItem('lastHours', diffHours);
+                let clockOutTimeObj = now;
+                let timeOutStr = clockOutTimeObj.toLocaleTimeString();
 
-                document.getElementById('otSummaryText').innerText = "වැඩ කළ පැය: " + diffHours + " | OT මුදල: Rs. " + todayTotalOT;
+                // Standard Off Time check for OT
+                let standardOffTimeStr = localStorage.getItem('standardOffTime') || '16:30';
+                let [offHour, offMinute] = standardOffTimeStr.split(':').map(Number);
+                
+                let standardOffDate = new Date(clockOutTimeObj);
+                standardOffDate.setHours(offHour, offMinute, 0, 0);
+
+                let otHours = 0;
+                if (clockOutTimeObj > standardOffDate) {
+                    let diffMs = clockOutTimeObj - standardOffDate;
+                    otHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+                }
+
+                let hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+                let calculatedOTMoney = otHours * hourlyRate;
+                localStorage.setItem('savedOT', calculatedOTMoney);
+
+                let logMsg = `Out: දවස ${day}, මාසය ${month}, වසර ${year} - වෙලාව ${timeOutStr} | OT පැය: ${otHours}`;
+                historyText.innerText = logMsg;
+
                 isClockedIn = false;
                 statusText.innerText = "දැනට වැඩ අවසන් / Not Clocked In";
                 statusText.style.color = "var(--danger)";
+                infoDisplay.innerText = "අවසන් වරට වැඩ අවසන් කළේ: " + timeOutStr;
                 btn.innerText = "වැඩට පැමිණීම සටහන් කරන්න / Clock In";
                 btn.className = "btn btn-success";
                 calculateAll();
@@ -759,7 +805,7 @@
             reader.onload = function(e) {
                 try {
                     let backupData = JSON.parse(e.target.result);
-                    for (let key in backupData) { localStorage.getItem(key, backupData[key]); }
+                    for (let key in backupData) { localStorage.setItem(key, backupData[key]); }
                     alert("Backup එක සාර්ථකව Restore විය! පද්ධතිය නැවත පූරණය වේ.");
                     location.reload();
                 } catch (err) { alert("දෝෂයක් ඇත!"); }
@@ -782,10 +828,13 @@
             loadHistory();
             loadProfileData();
             if(localStorage.getItem('basicVal')) document.getElementById('basicSalary').value = localStorage.getItem('basicVal');
-            if(localStorage.getItem('expenseVal')) document.getElementById('monthExpense').value = localStorage.getItem('expenseVal');
-            let lastHrs = localStorage.getItem('lastHours') || 0;
-            if(lastHrs) {
-                document.getElementById('otSummaryText').innerText = "වැඩ කළ පැය: " + lastHrs + " | OT මුදල: Rs. " + (localStorage.getItem('savedOT') || 0);
+            if(localStorage.getItem('expenseVal')) document.getElementById('monthExpense').value = localStorage.getItem('monthExpense');
+            let savedStandardOff = localStorage.getItem('standardOffTime') || '16:30';
+            document.getElementById('standardOffTime').value = savedStandardOff;
+
+            let lastLog = localStorage.getItem('lastClockInLog');
+            if(lastLog) {
+                document.getElementById('clockInfoDisplay').innerText = lastLog;
             }
         }
 
