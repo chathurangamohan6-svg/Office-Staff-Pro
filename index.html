@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Staff Pro - Attendance & Salary</title>
+    <title>Office Staff Pro - Multi User</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -305,7 +305,7 @@
             
             <div class="header">
                 <div>
-                    <h2>App Dashboard <span class="cloud-badge" id="syncStatus">☁️ Synced</span></h2>
+                    <h2>App Dashboard <span class="cloud-badge" id="syncStatus">☁️ Multi-User</span></h2>
                 </div>
                 <div class="header-btns">
                     <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
@@ -435,7 +435,7 @@
                 <button class="btn btn-info" onclick="exportDataToCSV()" style="margin-top: 10px;">Excel (CSV) ලෙස ඩවුන්ලෝඩ් කරන්න</button>
             </div>
 
-            <button class="btn btn-danger" onclick="clearAllData()" style="margin-bottom: 25px;">සියලුම ඩේටා මකා දමන්න / Clear All Data</button>
+            <button class="btn btn-danger" onclick="clearUserData()" style="margin-bottom: 25px;">මගේ ගිණුමේ දත්ත පමණක් මකා දමන්න / Clear Account Data</button>
 
         </div>
 
@@ -444,6 +444,7 @@
     <script>
         let isClockedIn = false;
         let clockInTimeObj = null;
+        let loggedInEmail = null;
         let deferredPrompt;
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -465,21 +466,37 @@
         }
 
         window.onload = function() {
-            if(!localStorage.getItem('sysPass')) {
-                localStorage.setItem('sysPass', '1234');
-                localStorage.setItem('empName', 'අභිනේශ්');
-                localStorage.setItem('empEmail', 'admin@office.com');
-                localStorage.setItem('empPhone', '0771234567');
-                localStorage.setItem('workStartTime', '08:30');
-                localStorage.setItem('workOffTime', '16:30');
+            // Create default admin user if none exists
+            let users = JSON.parse(localStorage.getItem('allUsers')) || {};
+            if(Object.keys(users).length === 0) {
+                users['admin@office.com'] = {
+                    name: 'අභිනේශ්',
+                    email: 'admin@office.com',
+                    phone: '0771234567',
+                    pass: '1234',
+                    dob: '',
+                    desig: 'Admin / Staff',
+                    workStartTime: '08:30',
+                    workOffTime: '16:30',
+                    basicVal: '',
+                    expenseVal: '',
+                    netSalary: 0,
+                    attendance: [],
+                    history: [],
+                    tasks: []
+                };
+                localStorage.setItem('allUsers', JSON.stringify(users));
             }
 
-            if(localStorage.getItem('isLoggedIn') === "true") {
+            let activeUser = localStorage.getItem('activeUserEmail');
+            if(activeUser && users[activeUser]) {
+                loggedInEmail = activeUser;
                 switchScreen('dashboardScreen');
                 showDashboard();
             } else {
                 switchScreen('loginScreen');
             }
+
             let savedTheme = localStorage.getItem('theme') || 'light';
             setTheme(savedTheme);
         };
@@ -489,9 +506,17 @@
             document.getElementById(screenId).classList.add('active-screen');
         }
 
+        function getUsers() {
+            return JSON.parse(localStorage.getItem('allUsers')) || {};
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem('allUsers', JSON.stringify(users));
+        }
+
         function handleRegister() {
             let name = document.getElementById('regName').value.trim();
-            let email = document.getElementById('regEmail').value.trim();
+            let email = document.getElementById('regEmail').value.trim().toLowerCase();
             let phone = document.getElementById('regPhone').value.trim();
             let pass = document.getElementById('regPass').value;
             let err = document.getElementById('regError');
@@ -501,29 +526,53 @@
                 return;
             }
 
-            localStorage.setItem('empName', name);
-            localStorage.setItem('empEmail', email);
-            localStorage.setItem('empPhone', phone);
-            localStorage.setItem('sysPass', pass);
+            let users = getUsers();
+            if(users[email]) {
+                err.innerText = "මෙම ඊමේල් ලිපිනයෙන් දැනටමත් ගිණුමක් ඇත!";
+                return;
+            }
 
+            users[email] = {
+                name: name,
+                email: email,
+                phone: phone,
+                pass: pass,
+                dob: '',
+                desig: 'Staff Member',
+                workStartTime: '08:30',
+                workOffTime: '16:30',
+                basicVal: '',
+                expenseVal: '',
+                netSalary: 0,
+                attendance: [],
+                history: [],
+                tasks: []
+            };
+
+            saveUsers(users);
             alert("ගිණුම සාර්ථකව සාදන ලදී! දැන් ඔබට ලොග් විය හැක.");
             switchScreen('loginScreen');
         }
 
         function handleLogin() {
-            let identifier = document.getElementById('loginIdentifier').value.trim();
+            let identifier = document.getElementById('loginIdentifier').value.trim().toLowerCase();
             let pass = document.getElementById('loginPass').value;
             let err = document.getElementById('loginError');
 
-            let savedEmail = localStorage.getItem('empEmail') || '';
-            let savedPhone = localStorage.getItem('empPhone') || '';
-            let currentPass = localStorage.getItem('sysPass') || '1234';
+            let users = getUsers();
+            let foundEmail = null;
 
-            let isEmailMatch = (identifier.toLowerCase() === savedEmail.toLowerCase());
-            let isPhoneMatch = (identifier === savedPhone);
+            // Check by email or phone
+            for(let email in users) {
+                if(email === identifier || users[email].phone === identifier) {
+                    foundEmail = email;
+                    break;
+                }
+            }
 
-            if((isEmailMatch || isPhoneMatch) && pass === currentPass) {
-                localStorage.setItem('isLoggedIn', 'true');
+            if(foundEmail && users[foundEmail].pass === pass) {
+                loggedInEmail = foundEmail;
+                localStorage.setItem('activeUserEmail', foundEmail);
                 switchScreen('dashboardScreen');
                 showDashboard();
             } else {
@@ -532,7 +581,8 @@
         }
 
         function handleLogout() {
-            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('activeUserEmail');
+            loggedInEmail = null;
             switchScreen('loginScreen');
             document.getElementById('loginIdentifier').value = "";
             document.getElementById('loginPass').value = "";
@@ -575,11 +625,29 @@
         }
 
         function saveProfile() {
-            localStorage.setItem('empName', document.getElementById('editName').value);
-            localStorage.setItem('empEmail', document.getElementById('editEmail').value);
-            localStorage.setItem('empPhone', document.getElementById('editPhone').value);
-            localStorage.setItem('empDob', document.getElementById('editDob').value);
-            localStorage.setItem('empDesig', document.getElementById('editDesig').value);
+            let users = getUsers();
+            let user = users[loggedInEmail];
+
+            user.name = document.getElementById('editName').value;
+            user.phone = document.getElementById('editPhone').value;
+            user.dob = document.getElementById('editDob').value;
+            user.desig = document.getElementById('editDesig').value;
+
+            // If email changes, handle key update
+            let newEmail = document.getElementById('editEmail').value.trim().toLowerCase();
+            if(newEmail && newEmail !== loggedInEmail) {
+                if(users[newEmail]) {
+                    alert("මෙම ඊමේල් ලිපිනය දැනටමත් භාවිතයේ ඇත!");
+                    return;
+                }
+                users[newEmail] = user;
+                delete users[loggedInEmail];
+                loggedInEmail = newEmail;
+                localStorage.setItem('activeUserEmail', newEmail);
+                user.email = newEmail;
+            }
+
+            saveUsers(users);
             loadProfileData();
             toggleEditProfile();
             alert("තොරතුරු සාර්ථකව සුරකින ලදී!");
@@ -588,12 +656,16 @@
         function updatePassword() {
             let currInput = document.getElementById('currPassInput').value;
             let newPass = document.getElementById('newPassInput').value;
-            let savedPass = localStorage.getItem('sysPass') || '1234';
+            
+            let users = getUsers();
+            let user = users[loggedInEmail];
 
-            if(currInput !== savedPass) { alert("වත්මන් මුරපදය වැරදිය!"); return; }
+            if(currInput !== user.pass) { alert("වත්මන් මුරපදය වැරදිය!"); return; }
             if(!newPass || newPass.length < 4) { alert("නව මුරපදය අක්ෂර 4කට වඩා වැඩි විය යුතුය!"); return; }
 
-            localStorage.setItem('sysPass', newPass);
+            user.pass = newPass;
+            saveUsers(users);
+
             document.getElementById('currPassInput').value = "";
             document.getElementById('newPassInput').value = "";
             togglePasswordSection();
@@ -601,37 +673,36 @@
         }
 
         function loadProfileData() {
-            let name = localStorage.getItem('empName') || 'අභිනේශ්';
-            let email = localStorage.getItem('empEmail') || '';
-            let phone = localStorage.getItem('empPhone') || '';
-            let dob = localStorage.getItem('empDob') || '';
-            let desig = localStorage.getItem('empDesig') || 'Admin / Staff';
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(!user) return;
 
-            document.getElementById('dispName').innerText = name;
-            document.getElementById('dispEmail').innerText = email;
-            document.getElementById('dispPhone').innerText = phone;
-            document.getElementById('dispDob').innerText = dob ? dob : 'දමා නැත';
-            document.getElementById('dispDesig').innerText = desig;
+            document.getElementById('dispName').innerText = user.name;
+            document.getElementById('dispEmail').innerText = user.email;
+            document.getElementById('dispPhone').innerText = user.phone;
+            document.getElementById('dispDob').innerText = user.dob ? user.dob : 'දමා නැත';
+            document.getElementById('dispDesig').innerText = user.desig;
 
-            if(dob) {
-                let age = Math.abs(new Date(Date.now() - new Date(dob).getTime()).getUTCFullYear() - 1970);
+            if(user.dob) {
+                let age = Math.abs(new Date(Date.now() - new Date(user.dob).getTime()).getUTCFullYear() - 1970);
                 document.getElementById('dispAge').innerText = age + " වසර / Years";
             } else {
                 document.getElementById('dispAge').innerText = '-';
             }
 
-            document.getElementById('editName').value = name;
-            document.getElementById('editEmail').value = email;
-            document.getElementById('editPhone').value = phone;
-            document.getElementById('editDob').value = dob;
-            document.getElementById('editDesig').value = desig;
+            document.getElementById('editName').value = user.name;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editPhone').value = user.phone;
+            document.getElementById('editDob').value = user.dob;
+            document.getElementById('editDesig').value = user.desig;
         }
 
         function saveWorkTimes() {
-            let startT = document.getElementById('workStartTime').value;
-            let offT = document.getElementById('workOffTime').value;
-            localStorage.setItem('workStartTime', startT);
-            localStorage.setItem('workOffTime', offT);
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            user.workStartTime = document.getElementById('workStartTime').value;
+            user.workOffTime = document.getElementById('workOffTime').value;
+            saveUsers(users);
         }
 
         function toggleAttendance() {
@@ -644,7 +715,8 @@
             let day = now.getDate();
             let timeStr = now.toLocaleTimeString();
 
-            let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            let users = getUsers();
+            let user = users[loggedInEmail];
 
             if (!isClockedIn) {
                 isClockedIn = true;
@@ -658,10 +730,9 @@
                 let clockOutTimeObj = now;
                 let timeOutStr = clockOutTimeObj.toLocaleTimeString();
 
-                // Save record with Day, Month, Year, In & Out times
                 let record = `දවස: ${day} ${month} ${year} | In: ${clockInTimeObj.toLocaleTimeString()} - Out: ${timeOutStr}`;
-                attendanceRecords.unshift(record); // Add to top
-                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                user.attendance.unshift(record);
+                saveUsers(users);
 
                 isClockedIn = false;
                 statusText.innerText = "දැනට වැඩ අවසන් / Not Clocked In";
@@ -676,8 +747,11 @@
             let list = document.getElementById('attendanceList');
             if(!list) return;
             list.innerHTML = "";
-            let records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-            records.forEach((rec, index) => {
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(!user) return;
+
+            user.attendance.forEach((rec, index) => {
                 let li = document.createElement('li');
                 li.innerHTML = `<span>${rec}</span> <button class="delete-item" onclick="deleteAttendance(${index})">Delete</button>`;
                 list.appendChild(li);
@@ -685,9 +759,10 @@
         }
 
         function deleteAttendance(index) {
-            let records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-            records.splice(index, 1);
-            localStorage.setItem('attendanceRecords', JSON.stringify(records));
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            user.attendance.splice(index, 1);
+            saveUsers(users);
             loadAttendanceList();
         }
 
@@ -699,17 +774,24 @@
             document.getElementById('topNetSalary').innerText = "Rs. " + netSalary;
             document.getElementById('topYearlySavings').innerText = "Rs. " + (netSalary * 12);
 
-            localStorage.setItem('netSalary', netSalary);
-            localStorage.setItem('basicVal', basic);
-            localStorage.setItem('expenseVal', expense);
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(user) {
+                user.basicVal = basic;
+                user.expenseVal = expense;
+                user.netSalary = netSalary;
+                saveUsers(users);
+            }
         }
 
         function saveMonthlyHistory() {
             let month = document.getElementById('selectMonth').value;
-            let net = localStorage.getItem('netSalary') || 0;
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.push(month + " - Net Salary: Rs. " + net);
-            localStorage.setItem('history', JSON.stringify(history));
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            let net = user.netSalary || 0;
+
+            user.history.push(month + " - Net Salary: Rs. " + net);
+            saveUsers(users);
             loadHistory();
             alert(month + " මසේ වාර්තාව ඉතිහාසයට එක් කළා!");
         }
@@ -718,8 +800,11 @@
             let list = document.getElementById('historyList');
             if(!list) return;
             list.innerHTML = "";
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.forEach((h, index) => {
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(!user) return;
+
+            user.history.forEach((h, index) => {
                 let li = document.createElement('li');
                 li.innerHTML = `<span>${h}</span> <button class="delete-item" onclick="deleteHistory(${index})">Delete</button>`;
                 list.appendChild(li);
@@ -727,18 +812,20 @@
         }
 
         function deleteHistory(index) {
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.splice(index, 1);
-            localStorage.setItem('history', JSON.stringify(history));
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            user.history.splice(index, 1);
+            saveUsers(users);
             loadHistory();
         }
 
         function saveTask() {
             let task = document.getElementById('taskInput').value;
             if(task.trim() !== "") {
-                let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-                tasks.push(new Date().toLocaleDateString() + " - " + task);
-                localStorage.setItem('tasks', JSON.stringify(tasks));
+                let users = getUsers();
+                let user = users[loggedInEmail];
+                user.tasks.push(new Date().toLocaleDateString() + " - " + task);
+                saveUsers(users);
                 document.getElementById('taskInput').value = "";
                 loadTasks();
             } else {
@@ -750,8 +837,11 @@
             let list = document.getElementById('taskList');
             if(!list) return;
             list.innerHTML = "";
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            tasks.forEach((t, index) => {
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(!user) return;
+
+            user.tasks.forEach((t, index) => {
                 let li = document.createElement('li');
                 li.innerHTML = `<span>${t}</span> <button class="delete-item" onclick="deleteTask(${index})">Delete</button>`;
                 list.appendChild(li);
@@ -759,41 +849,36 @@
         }
 
         function deleteTask(index) {
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            tasks.splice(index, 1);
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            user.tasks.splice(index, 1);
+            saveUsers(users);
             loadTasks();
         }
 
         function downloadPDFReport() {
-            let name = localStorage.getItem('empName') || 'N/A';
-            let email = localStorage.getItem('empEmail') || 'N/A';
-            let phone = localStorage.getItem('empPhone') || 'N/A';
-            let netSalary = localStorage.getItem('netSalary') || '0';
-            let attendance = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            let users = getUsers();
+            let user = users[loggedInEmail];
 
             let printWindow = window.open('', '', 'height=700,width=700');
             printWindow.document.write('<html><head><title>Office Staff Report</title><style>body { font-family: Arial, sans-serif; padding: 30px; }</style></head><body>');
             printWindow.document.write('<h1>Office Staff Pro - Report</h1>');
-            printWindow.document.write('<p><strong>නම / Name:</strong> ' + name + '</p>');
-            printWindow.document.write('<p><strong>ඊමේල් / Email:</strong> ' + email + '</p>');
-            printWindow.document.write('<p><strong>දුරකථන අංකය / Phone:</strong> ' + phone + '</p>');
-            printWindow.document.write('<p><strong>ශුද්ධ මාසික වැටුප:</strong> Rs. ' + netSalary + '</p>');
+            printWindow.document.write('<p><strong>නම / Name:</strong> ' + user.name + '</p>');
+            printWindow.document.write('<p><strong>ඊමේල් / Email:</strong> ' + user.email + '</p>');
+            printWindow.document.write('<p><strong>දුරකථන අංකය / Phone:</strong> ' + user.phone + '</p>');
+            printWindow.document.write('<p><strong>ශුද්ධ මාසික වැටුප:</strong> Rs. ' + user.netSalary + '</p>');
             printWindow.document.write('<h3>පැමිණීමේ වාර්තා (Attendance):</h3><ul>');
-            attendance.forEach(a => printWindow.document.write('<li>' + a + '</li>'));
+            user.attendance.forEach(a => printWindow.document.write('<li>' + a + '</li>'));
             printWindow.document.write('</ul></body></html>');
             printWindow.document.close();
             setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
         }
 
         function downloadBackup() {
-            let backupData = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                backupData[localStorage.key(i)] = localStorage.getItem(localStorage.key(i));
-            }
+            let backupData = localStorage.getItem('allUsers');
             let link = document.createElement('a');
-            link.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-            link.download = "office_staff_backup.json";
+            link.href = "data:text/json;charset=utf-8," + encodeURIComponent(backupData);
+            link.download = "office_staff_all_users_backup.json";
             link.click();
         }
 
@@ -804,7 +889,7 @@
             reader.onload = function(e) {
                 try {
                     let backupData = JSON.parse(e.target.result);
-                    for (let key in backupData) { localStorage.setItem(key, backupData[key]); }
+                    localStorage.setItem('allUsers', JSON.stringify(backupData));
                     alert("Backup එක සාර්ථකව Restore විය! පද්ධතිය නැවත පූරණය වේ.");
                     location.reload();
                 } catch (err) { alert("දෝෂයක් ඇත!"); }
@@ -813,9 +898,12 @@
         }
 
         function exportDataToCSV() {
+            let users = getUsers();
+            let user = users[loggedInEmail];
+
             let csvContent = "data:text/csv;charset=utf-8,Category,Details\n" +
-                "Employee Name,\"" + (localStorage.getItem('empName') || '') + "\"\n" +
-                "Net Monthly Salary,Rs. " + (localStorage.getItem('netSalary') || 0) + "\n";
+                "Employee Name,\"" + user.name + "\"\n" +
+                "Net Monthly Salary,Rs. " + user.netSalary + "\n";
             let link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
             link.setAttribute("download", "office_staff_report.csv");
@@ -823,21 +911,27 @@
         }
 
         function loadSavedData() {
+            let users = getUsers();
+            let user = users[loggedInEmail];
+            if(!user) return;
+
             loadTasks();
             loadHistory();
             loadAttendanceList();
             loadProfileData();
-            if(localStorage.getItem('basicVal')) document.getElementById('basicSalary').value = localStorage.getItem('basicVal');
-            if(localStorage.getItem('expenseVal')) document.getElementById('monthExpense').value = localStorage.getItem('expenseVal');
-            
-            if(localStorage.getItem('workStartTime')) document.getElementById('workStartTime').value = localStorage.getItem('workStartTime');
-            if(localStorage.getItem('workOffTime')) document.getElementById('workOffTime').value = localStorage.getItem('workOffTime');
+
+            if(user.basicVal) document.getElementById('basicSalary').value = user.basicVal;
+            if(user.expenseVal) document.getElementById('monthExpense').value = user.expenseVal;
+            if(user.workStartTime) document.getElementById('workStartTime').value = user.workStartTime;
+            if(user.workOffTime) document.getElementById('workOffTime').value = user.workOffTime;
         }
 
-        function clearAllData() {
-            if(confirm("ඔබට සියලුම දත්ත මකා දැමීමට අවශ්‍යද?")) {
-                localStorage.clear();
-                location.reload();
+        function clearUserData() {
+            if(confirm("ඔබට ඔබගේ ගිණුමේ දත්ත පමණක් මකා දැමීමට අවශ්‍යද?")) {
+                let users = getUsers();
+                delete users[loggedInEmail];
+                saveUsers(users);
+                handleLogout();
             }
         }
     </script>
