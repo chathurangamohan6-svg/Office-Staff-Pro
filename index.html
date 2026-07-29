@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Staff Pro - Cloud Edition</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Office Staff Pro">
+    <meta name="theme-color" content="#4f46e5">
+
+    <!-- Firebase SDK (Google Cloud Backend) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --input-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --success: #34d399;
+            --danger: #f87171;
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-color: #f9fafb;
+            --border-color: #374151;
+            --input-bg: #374151;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #authScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 85vh;
+        }
+        .auth-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .auth-card h2 { color: var(--primary); margin-top: 0; }
+        
+        #dashboardScreen {
+            display: none;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .header h2 { margin: 0; color: var(--primary); font-size: 16px; }
+        
+        .header-btns { display: flex; gap: 8px; }
+        .icon-btn, .logout-sm {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .icon-btn { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); }
+        .logout-sm { background: #ef4444; color: white; border: none; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .stat-card h4 { margin: 0; font-size: 11px; color: #9ca3af; text-transform: uppercase; }
+        .stat-card p { margin: 6px 0 0; font-size: 17px; font-weight: bold; color: var(--primary); }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .card h3 {
+            margin-top: 0;
+            font-size: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-info { background-color: #0ea5e9; color: white; }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        label { font-size: 12px; font-weight: 600; color: #9ca3af; display: block; text-align: left; }
+        
+        ul { list-style: none; padding: 0; margin: 10px 0 0; text-align: left; }
+        li {
+            background: var(--bg-color);
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .cloud-badge {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            float: right;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="app-container">
+
+        <!-- 1. AUTHENTICATION SCREEN (Login & Register) -->
+        <div id="authScreen">
+            <div class="auth-card">
+                <h2 id="authTitle">Office Staff Pro</h2>
+                <p id="authSubtitle" style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">ගිණුමකට ඇතුළු වන්න / Login</p>
+                
+                <label>ඊමේල් ලිපිනය / Email:</label>
+                <input type="email" id="authEmail" placeholder="name@example.com">
+                
+                <label>මුරපදය / Password:</label>
+                <input type="password" id="authPass" placeholder="At least 6 characters">
+                
+                <button class="btn" id="authSubmitBtn" onclick="handleAuthAction()">ඇතුළු වන්න / Login</button>
+                
+                <p style="font-size: 12px; margin-top: 15px;">
+                    <span id="switchText">ගිණුමක් නැද්ද?</span> 
+                    <a href="javascript:void(0)" onclick="toggleAuthMode()" id="switchAuthModeBtn" style="color: var(--primary); font-weight: bold;">අලුතින් සාදාගන්න (Register)</a>
+                </p>
+                <p id="authError" style="color: var(--danger); font-size: 12px; margin-top: 10px;"></p>
+            </div>
+        </div>
+
+        <!-- 2. MAIN DASHBOARD SCREEN -->
+        <div id="dashboardScreen">
+            
+            <div class="header">
+                <div>
+                    <h2>Staff Dashboard <span class="cloud-badge">☁️ Cloud Live</span></h2>
+                </div>
+                <div class="header-btns">
+                    <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+                    <button class="logout-sm" onclick="handleLogout()">Logout</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Net Salary</h4>
+                    <p id="topNetSalary">Rs. 0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Yearly Savings</h4>
+                    <p id="topYearlySavings">Rs. 0</p>
+                </div>
+            </div>
+
+            <!-- Profile Info -->
+            <div class="card">
+                <h3>👤 සේවක තොරතුරු / Profile</h3>
+                <label>නම / Full Name:</label>
+                <input type="text" id="profileName" placeholder="ඔබේ නම">
+                <label>දුරකථන අංකය / Phone:</label>
+                <input type="text" id="profilePhone" placeholder="077xxxxxxx">
+                <label>තනතුර / Designation:</label>
+                <input type="text" id="profileDesig" placeholder="උදා: Manager / Staff">
+                <button class="btn btn-success" onclick="saveUserDataToCloud()">වෙනස්කම් සුරකින්න / Save</button>
+            </div>
+
+            <!-- Salary & Finance -->
+            <div class="card">
+                <h3>💰 වැටුප් කළමනාකරණය / Salary</h3>
+                <label>මූලික වැටුප / Basic Salary (Rs.):</label>
+                <input type="number" id="basicSalary" placeholder="50000">
+                <label>මාසික වියදම් / Expenses (Rs.):</label>
+                <input type="number" id="monthExpense" placeholder="5000">
+                <button class="btn btn-info" onclick="saveUserDataToCloud()">වැටුප් දත්ත යාවත්කාලීන කරන්න</button>
+            </div>
+
+            <!-- Daily Tasks -->
+            <div class="card">
+                <h3>📝 දවසේ වැඩ සටහන / Daily Tasks</h3>
+                <label>අද කළ වැඩ විස්තරය:</label>
+                <textarea id="taskInput" placeholder="වැඩ විස්තරය ලියන්න..."></textarea>
+                <button class="btn" onclick="addTaskToCloud()">වැඩ සටහන් කරන්න</button>
+                <ul id="taskList"></ul>
+            </div>
+
+            <button class="btn btn-danger" onclick="handleLogout()" style="margin-bottom: 25px;">පද්ධතියෙන් ඉවත් වන්න / Logout</button>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // FIREBASE CONFIGURATION (මෙතැනට ඔබේ ෆයර්බේස් විස්තර දමන්න)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let isRegisterMode = false;
+        let currentUserUid = null;
+
+        // Toggle Login / Register UI Mode
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('authTitle').innerText = isRegisterMode ? "ගිණුමක් සදාගැනීම / Register" : "Office Staff Pro";
+            document.getElementById('authSubtitle').innerText = isRegisterMode ? "නව ගිණුමක් සාදාගන්න" : "ගිණුමකට ඇතුළු වන්න / Login";
+            document.getElementById('authSubmitBtn').innerText = isRegisterMode ? "ගිණුම සාදන්න / Sign Up" : "ඇතුළු වන්න / Login";
+            document.getElementById('switchText').innerText = isRegisterMode ? "දැනටමත් ගිණුමක් තියෙනවද?" : "ගිණුමක් නැද්ද?";
+            document.getElementById('switchAuthModeBtn').innerText = isRegisterMode ? "ඇතුළු වන්න (Login)" : "අලුතින් සාදාගන්න (Register)";
+            document.getElementById('authError').innerText = "";
+        }
+
+        // Authentication Handler (Login / Register)
+        function handleAuthAction() {
+            let email = document.getElementById('authEmail').value.trim();
+            let pass = document.getElementById('authPass').value;
+            let err = document.getElementById('authError');
+
+            if(!email || !pass) {
+                err.innerText = "කරුණාකර ඊමේල් ලිපිනය සහ මුරපදය ඇතුළත් කරන්න!";
+                return;
+            }
+
+            if(isRegisterMode) {
+                auth.createUserWithEmailAndPassword(email, pass)
+                    .then((userCredential) => {
+                        alert("ගිණුම සාර්ථකව සාදන ලදී!");
+                        showDashboard(userCredential.user);
+                    })
+                    .catch((error) => { err.innerText = error.message; });
+            } else {
+                auth.signInWithEmailAndPassword(email, pass)
+                    .then((userCredential) => {
+                        showDashboard(userCredential.user);
+                    })
+                    .catch((error) => { err.innerText = "වැරදි ඊමේල් ලිපිනයක් හෝ මුරපදයකි!"; });
+            }
+        }
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                document.getElementById('dashboardScreen').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('authEmail').value = "";
+                document.getElementById('authPass').value = "";
+            });
+        }
+
+        // Auth State Listener
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                showDashboard(user);
+            } else {
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('dashboardScreen').style.display = 'none';
+            }
+        });
+
+        function showDashboard(user) {
+            currentUserUid = user.uid;
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('dashboardScreen').style.display = 'block';
+            loadUserDataFromCloud();
+        }
+
+        // Save Data to Cloud (Firestore)
+        function saveUserDataToCloud() {
+            if (!currentUserUid) return;
+            let name = document.getElementById('profileName').value;
+            let phone = document.getElementById('profilePhone').value;
+            let desig = document.getElementById('profileDesig').value;
+            let basic = parseFloat(document.getElementById('basicSalary').value) || 0;
+            let expense = parseFloat(document.getElementById('monthExpense').value) || 0;
+
+            let netSalary = basic - expense;
+            document.getElementById('topNetSalary').innerText = "Rs. " + netSalary;
+            document.getElementById('topYearlySavings').innerText = "Rs. " + (netSalary * 12);
+
+            db.collection("users").doc(currentUserUid).set({
+                name, phone, desig, basic, expense, netSalary
+            }, { merge: true }).then(() => {
+                alert("දත්ත සාර්ථකව ක්ලවුඩ් එකේ සුරකින ලදී!");
+            });
+        }
+
+        // Load Data from Cloud
+        function loadUserDataFromCloud() {
+            db.collection("users").doc(currentUserUid).get().then((doc) => {
+                if (doc.exists) {
+                    let data = doc.data();
+                    document.getElementById('profileName').value = data.name || '';
+                    document.getElementById('profilePhone').value = data.phone || '';
+                    document.getElementById('profileDesig').value = data.desig || '';
+                    document.getElementById('basicSalary').value = data.basic || '';
+                    document.getElementById('monthExpense').value = data.expense || '';
+                    
+                    let net = data.netSalary || 0;
+                    document.getElementById('topNetSalary').innerText = "Rs. " + net;
+                    document.getElementById('topYearlySavings').innerText = "Rs. " + (net * 12);
+                }
+                loadTasksFromCloud();
+            });
+        }
+
+        // Task Manager with Cloud
+        function addTaskToCloud() {
+            let taskText = document.getElementById('taskInput').value.trim();
+            if(!taskText) return;
+
+            db.collection("users").doc(currentUserUid).collection("tasks").add({
+                text: new Date().toLocaleDateString() + " - " + taskText,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('taskInput').value = "";
+                loadTasksFromCloud();
+            });
+        }
+
+        function loadTasksFromCloud() {
+            let list = document.getElementById('taskList');
+            list.innerHTML = "";
+            db.collection("users").doc(currentUserUid).collection("tasks").get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    let li = document.createElement('li');
+                    li.textContent = doc.data().text;
+                    list.appendChild(li);
+                });
+            });
+        }
+
+        function toggleTheme() {
+            let current = document.body.getAttribute('data-theme');
+            let next = current === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', next);
+            document.getElementById('themeBtn').innerText = next === 'light' ? '🌙 Dark' : '☀️ Light';
+        }
+    </script>
+</body>
+</html>
