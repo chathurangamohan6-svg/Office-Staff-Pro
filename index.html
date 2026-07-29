@@ -3,34 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Staff Pro - Cloud Edition</title>
+    <title>Office Staff Pro - Mobile & Web Edition</title>
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags for Android & iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Office Staff Pro">
     <meta name="theme-color" content="#4f46e5">
-
-  <!-- Firebase SDK (Google Cloud Backend) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <script>
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyDqStNrEGXaOQhnTFEAQNsprjWT9Ad7I1U",
-        authDomain: "officestaffpro.firebaseapp.com",
-        projectId: "officestaffpro",
-        storageBucket: "officestaffpro.firebasestorage.app",
-        messagingSenderId: "87987153313",
-        appId: "1:87987153313:web:d519d22b763212ed5d83e0",
-        measurementId: "G-GBZE5ZDZM4"
-      };
-
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
-    </script>
 
     <style>
         :root {
@@ -69,25 +48,24 @@
             max-width: 500px;
             margin: 0 auto;
         }
-        #authScreen {
-            display: flex;
+        .screen-box {
+            display: none;
             flex-direction: column;
             justify-content: center;
-            height: 85vh;
+        }
+        .active-screen {
+            display: flex !important;
         }
         .auth-card {
             background: var(--card-bg);
-            padding: 25px;
+            padding: 30px;
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             text-align: center;
-            border: 1px solid var(--border-color);
+            margin-top: 40px;
         }
         .auth-card h2 { color: var(--primary); margin-top: 0; }
         
-        #dashboardScreen {
-            display: none;
-        }
         .header {
             display: flex;
             justify-content: space-between;
@@ -97,20 +75,33 @@
             border-radius: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             margin-bottom: 15px;
-            border: 1px solid var(--border-color);
         }
-        .header h2 { margin: 0; color: var(--primary); font-size: 16px; }
+        .header h2 { margin: 0; color: var(--primary); font-size: 18px; }
         
-        .header-btns { display: flex; gap: 8px; }
-        .icon-btn, .logout-sm {
+        .header-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
             padding: 6px 10px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
         }
-        .icon-btn { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); }
-        .logout-sm { background: #ef4444; color: white; border: none; }
+        .logout-sm {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
         .stats-grid {
             display: grid;
@@ -154,12 +145,23 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s;
             margin-top: 10px;
         }
         .btn:hover { background-color: var(--primary-hover); }
-        .btn-success { background-color: var(--success); }
-        .btn-danger { background-color: var(--danger); }
+        .btn-success { background-color: var(--success); color: #fff; }
+        .btn-danger { background-color: var(--danger); color: #fff; }
         .btn-info { background-color: #0ea5e9; color: white; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+        .btn-purple { background-color: #8b5cf6; color: white; }
+        .link-text {
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 15px;
+            display: inline-block;
+            font-weight: bold;
+        }
 
         input, textarea, select {
             width: 100%;
@@ -173,7 +175,14 @@
             box-sizing: border-box;
             font-size: 13px;
         }
-        label { font-size: 12px; font-weight: 600; color: #9ca3af; display: block; text-align: left; }
+        textarea { resize: vertical; height: 50px; }
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            display: block;
+            text-align: left;
+        }
         
         ul { list-style: none; padding: 0; margin: 10px 0 0; text-align: left; }
         li {
@@ -183,6 +192,27 @@
             margin-bottom: 6px;
             border-radius: 6px;
             font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-item {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .profile-info {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .profile-info span {
+            font-weight: bold;
+            color: var(--primary);
         }
         .cloud-badge {
             background: #d1fae5;
@@ -193,40 +223,90 @@
             font-weight: bold;
             float: right;
         }
+        
+        #installBanner {
+            display: none;
+            background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+        #installBtn {
+            background: white;
+            color: #4f46e5;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body data-theme="light">
 
     <div class="app-container">
 
-        <!-- 1. AUTHENTICATION SCREEN (Login & Register) -->
-        <div id="authScreen">
+        <!-- Install App Banner -->
+        <div id="installBanner">
+            📱 මෙම ඇප් එක ඔබේ දුරකථනයට පහසුවෙන් ඉන්ස්ටෝල් කරගන්න!
+            <br>
+            <button id="installBtn" onclick="installApp()">Install App</button>
+        </div>
+
+        <!-- 1. LOGIN SCREEN -->
+        <div id="loginScreen" class="screen-box active-screen">
             <div class="auth-card">
-                <h2 id="authTitle">Office Staff Pro</h2>
-                <p id="authSubtitle" style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">ගිණුමකට ඇතුළු වන්න / Login</p>
+                <h2>Office Staff Pro</h2>
+                <p style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">ගිණුමට ඇතුළු වන්න / Login</p>
                 
-                <label>ඊමේල් ලිපිනය / Email:</label>
-                <input type="email" id="authEmail" placeholder="name@example.com">
+                <label>ඊමේල් හෝ දුරකථන අංකය / Email or Phone:</label>
+                <input type="text" id="loginIdentifier" placeholder="Enter email or phone">
                 
                 <label>මුරපදය / Password:</label>
-                <input type="password" id="authPass" placeholder="At least 6 characters">
+                <input type="password" id="loginPass" placeholder="Enter password">
                 
-                <button class="btn" id="authSubmitBtn" onclick="handleAuthAction()">ඇතුළු වන්න / Login</button>
+                <button class="btn" onclick="handleLogin()">ඇතුළු වන්න / Login</button>
+                <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 10px;"></p>
                 
-                <p style="font-size: 12px; margin-top: 15px;">
-                    <span id="switchText">ගිණුමක් නැද්ද?</span> 
-                    <a href="javascript:void(0)" onclick="toggleAuthMode()" id="switchAuthModeBtn" style="color: var(--primary); font-weight: bold;">අලුතින් සාදාගන්න (Register)</a>
-                </p>
-                <p id="authError" style="color: var(--danger); font-size: 12px; margin-top: 10px;"></p>
+                <span class="link-text" onclick="switchScreen('signupScreen')">ගිණුමක් නැද්ද? අලුතින් සාදාගන්න (Sign Up)</span>
             </div>
         </div>
 
-        <!-- 2. MAIN DASHBOARD SCREEN -->
-        <div id="dashboardScreen">
+        <!-- 2. SIGN UP SCREEN (NEW ACCOUNT) -->
+        <div id="signupScreen" class="screen-box">
+            <div class="auth-card">
+                <h2>Office Staff Pro</h2>
+                <p style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">අලුත් ගිණුමක් සාදාගන්න / Register</p>
+                
+                <label>සම්පූර්ණ නම / Full Name:</label>
+                <input type="text" id="regName" placeholder="ඔබේ නම">
+
+                <label>ඊමේල් ලිපිනය / Email:</label>
+                <input type="email" id="regEmail" placeholder="example@gmail.com">
+
+                <label>දුරකථන අංකය / Phone Number:</label>
+                <input type="text" id="regPhone" placeholder="077XXXXXXX">
+
+                <label>නව මුරපදය / Password:</label>
+                <input type="password" id="regPass" placeholder="මුරපදයක් දෙන්න">
+                
+                <button class="btn btn-success" onclick="handleRegister()">ගිණුම සාදාගන්න / Sign Up</button>
+                <p id="regError" style="color: var(--danger); font-size: 12px; margin-top: 10px;"></p>
+                
+                <span class="link-text" onclick="switchScreen('loginScreen')">දැනටමත් ගිණුමක් තිබේද? ලොග් වන්න (Login)</span>
+            </div>
+        </div>
+
+        <!-- 3. MAIN DASHBOARD SCREEN -->
+        <div id="dashboardScreen" class="screen-box">
             
             <div class="header">
                 <div>
-                    <h2>Staff Dashboard <span class="cloud-badge">☁️ Cloud Live</span></h2>
+                    <h2>App Dashboard <span class="cloud-badge" id="syncStatus">☁️ Synced</span></h2>
                 </div>
                 <div class="header-btns">
                     <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
@@ -236,221 +316,484 @@
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h4>Net Salary</h4>
+                    <h4>Monthly Net Salary</h4>
                     <p id="topNetSalary">Rs. 0</p>
                 </div>
                 <div class="stat-card">
-                    <h4>Yearly Savings</h4>
+                    <h4>Yearly Savings (Est)</h4>
                     <p id="topYearlySavings">Rs. 0</p>
                 </div>
             </div>
 
-            <!-- Profile Info -->
+            <!-- Profile & Security -->
             <div class="card">
-                <h3>👤 සේවක තොරතුරු / Profile</h3>
-                <label>නම / Full Name:</label>
-                <input type="text" id="profileName" placeholder="ඔබේ නම">
-                <label>දුරකථන අංකය / Phone:</label>
-                <input type="text" id="profilePhone" placeholder="077xxxxxxx">
-                <label>තනතුර / Designation:</label>
-                <input type="text" id="profileDesig" placeholder="උදා: Manager / Staff">
-                <button class="btn btn-success" onclick="saveUserDataToCloud()">වෙනස්කම් සුරකින්න / Save</button>
+                <h3>👤 සේවක තොරතුරු සහ ආරක්ෂාව</h3>
+                <div id="profileView" class="profile-info">
+                    <p>නම / Name: <span id="dispName">-</span></p>
+                    <p>ඊමේල් / Email: <span id="dispEmail">-</span></p>
+                    <p>දුරකථන අංකය / Phone: <span id="dispPhone">-</span></p>
+                    <p>උපන් දිනය / DOB: <span id="dispDob">-</span></p>
+                    <p>වයස / Age: <span id="dispAge">-</span></p>
+                    <p>තනතුර / Designation: <span id="dispDesig">-</span></p>
+                    <button class="btn btn-info" onclick="toggleEditProfile()" style="margin-top: 5px;">තොරතුරු වෙනස් කරන්න / Edit Profile</button>
+                    <button class="btn btn-warning" onclick="togglePasswordSection()" style="margin-top: 5px;">මුරපදය වෙනස් කරන්න / Change Password</button>
+                </div>
+
+                <div id="profileEdit" style="display: none;">
+                    <label>නම / Full Name:</label>
+                    <input type="text" id="editName">
+                    <label>ඊමේල් ලිපිනය / Email:</label>
+                    <input type="email" id="editEmail">
+                    <label>දුරකථන අංකය / Phone Number:</label>
+                    <input type="text" id="editPhone">
+                    <label>උපන් දිනය / Date of Birth:</label>
+                    <input type="date" id="editDob">
+                    <label>තනතුර / Designation:</label>
+                    <input type="text" id="editDesig">
+                    <button class="btn btn-success" onclick="saveProfile()">තොරතුරු සුරකින්න / Save</button>
+                    <button class="btn btn-danger" onclick="toggleEditProfile()" style="margin-top:5px;">අවලංගු කරන්න / Cancel</button>
+                </div>
+
+                <div id="passwordEdit" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                    <label>වත්මන් මුරපදය / Current Password:</label>
+                    <input type="password" id="currPassInput">
+                    <label>නව මුරපදය / New Password:</label>
+                    <input type="password" id="newPassInput">
+                    <button class="btn btn-success" onclick="updatePassword()">මුරපදය යාවත්කාලීන කරන්න</button>
+                    <button class="btn btn-danger" onclick="togglePasswordSection()" style="margin-top:5px;">අවලංගු කරන්න / Cancel</button>
+                </div>
+            </div>
+
+            <!-- Attendance & OT -->
+            <div class="card">
+                <h3>⏰ පැමිණීම සහ OT / Attendance & OT</h3>
+                <label>තත්වය / Status:</label>
+                <p id="currentStatus" style="font-weight: bold; color: var(--danger); font-size: 12px; margin: 5px 0 10px;">දැනට වැඩ අවසන් / Not Clocked In</p>
+                <label>පැයකට OT ගෙවන මුදල (Hourly OT Rate Rs.):</label>
+                <input type="number" id="hourlyRate" placeholder="උදා: 500">
+                <button class="btn btn-success" id="inOutBtn" onclick="toggleAttendance()">වැඩට පැමිණීම සටහන් කරන්න / Clock In</button>
+                <p id="otSummaryText" style="font-size: 11px; color: var(--success); font-weight: bold; margin-top: 8px; text-align: center;"></p>
             </div>
 
             <!-- Salary & Finance -->
             <div class="card">
-                <h3>💰 වැටුප් කළමනාකරණය / Salary</h3>
+                <h3>💰 වැටුප් සහ මූල්‍ය / Salary & Finance</h3>
                 <label>මූලික වැටුප / Basic Salary (Rs.):</label>
-                <input type="number" id="basicSalary" placeholder="50000">
+                <input type="number" id="basicSalary" oninput="calculateAll()" placeholder="උදා: 50000">
                 <label>මාසික වියදම් / Expenses (Rs.):</label>
-                <input type="number" id="monthExpense" placeholder="5000">
-                <button class="btn btn-info" onclick="saveUserDataToCloud()">වැටුප් දත්ත යාවත්කාලීන කරන්න</button>
+                <input type="number" id="monthExpense" oninput="calculateAll()" placeholder="උදා: 5000">
+            </div>
+
+            <!-- Monthly History -->
+            <div class="card">
+                <h3>📅 මාසික ඉතිහාසය / Monthly History</h3>
+                <label>මාසය තෝරන්න / Select Month:</label>
+                <select id="selectMonth">
+                    <option value="January">ජනවාරි / January</option>
+                    <option value="February">පෙබරවාරි / February</option>
+                    <option value="March">මාර්තු / March</option>
+                    <option value="April">අප්‍රේල් / April</option>
+                    <option value="May">මැයි / May</option>
+                    <option value="June">ජූනි / June</option>
+                    <option value="July">ජූලි / July</option>
+                    <option value="August">අගෝස්තු / August</option>
+                    <option value="September">සැප්තැම්බර් / September</option>
+                    <option value="October">ඔක්තෝබර් / October</option>
+                    <option value="November">නොවැම්බර් / November</option>
+                    <option value="December">දෙසැම්බර් / December</option>
+                </select>
+                <button class="btn btn-info" onclick="saveMonthlyHistory()">මෙම මසේ වැටුප ඉතිහාසයට එක් කරන්න</button>
+                <ul id="historyList"></ul>
             </div>
 
             <!-- Daily Tasks -->
             <div class="card">
                 <h3>📝 දවසේ වැඩ සටහන / Daily Tasks</h3>
-                <label>අද කළ වැඩ විස්තරය:</label>
-                <textarea id="taskInput" placeholder="වැඩ විස්තරය ලියන්න..."></textarea>
-                <button class="btn" onclick="addTaskToCloud()">වැඩ සටහන් කරන්න</button>
+                <label>අද කළ වැඩ විස්තරය / Today's Task:</label>
+                <textarea id="taskInput" placeholder="උදා: දත්ත යාවත්කාලීන කළා..."></textarea>
+                <button class="btn" onclick="saveTask()">වැඩ සටහන් කරන්න / Save Task</button>
                 <ul id="taskList"></ul>
             </div>
 
-            <button class="btn btn-danger" onclick="handleLogout()" style="margin-bottom: 25px;">පද්ධතියෙන් ඉවත් වන්න / Logout</button>
+            <!-- Reports & Backup -->
+            <div class="card" style="text-align: center;">
+                <h3>📄 ලේඛන සහ ඩේටා සුරැකීම</h3>
+                <button class="btn btn-purple" onclick="downloadPDFReport()" style="margin-bottom: 10px;">🖨️ PDF වාර්තාව ඩවුන්ලෝඩ් කරන්න</button>
+                <button class="btn btn-warning" onclick="downloadBackup()">සම්පූර්ණ JSON Backup ෆයිල් එකක් ගන්න</button>
+                <label style="margin-top: 15px;">පැරණි Backup ෆයිල් එකක් Restore කරගන්න:</label>
+                <input type="file" id="backupFile" accept=".json" onchange="restoreBackup(event)" style="margin-bottom: 5px;">
+                <button class="btn btn-info" onclick="exportDataToCSV()" style="margin-top: 10px;">Excel (CSV) ලෙස ඩවුන්ලෝඩ් කරන්න</button>
+            </div>
+
+            <button class="btn btn-danger" onclick="clearAllData()" style="margin-bottom: 25px;">සියලුම ඩේටා මකා දමන්න / Clear All Data</button>
+
         </div>
 
     </div>
 
     <script>
-        // ==========================================
-        // FIREBASE CONFIGURATION (මෙතැනට ඔබේ ෆයර්බේස් විස්තර දමන්න)
-        // ==========================================
-       // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+        let isClockedIn = false;
+        let clockInTime = null;
+        let todayTotalOT = 0;
+        let deferredPrompt;
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDqStNrEGXaOQhnTFEAQNsprjwT9Ad7I1U",
-  authDomain: "officestaffpro.firebaseapp.com",
-  projectId: "officestaffpro",
-  storageBucket: "officestaffpro.firebasestorage.app",
-  messagingSenderId: "87987153313",
-  appId: "1:87987153313:web:d519d22b763212ed5d83e0",
-  measurementId: "G-GBZE5ZDZM4"
-};
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').style.display = 'block';
+        });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isRegisterMode = false;
-        let currentUserUid = null;
-
-        // Toggle Login / Register UI Mode
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('authTitle').innerText = isRegisterMode ? "ගිණුමක් සදාගැනීම / Register" : "Office Staff Pro";
-            document.getElementById('authSubtitle').innerText = isRegisterMode ? "නව ගිණුමක් සාදාගන්න" : "ගිණුමකට ඇතුළු වන්න / Login";
-            document.getElementById('authSubmitBtn').innerText = isRegisterMode ? "ගිණුම සාදන්න / Sign Up" : "ඇතුළු වන්න / Login";
-            document.getElementById('switchText').innerText = isRegisterMode ? "දැනටමත් ගිණුමක් තියෙනවද?" : "ගිණුමක් නැද්ද?";
-            document.getElementById('switchAuthModeBtn').innerText = isRegisterMode ? "ඇතුළු වන්න (Login)" : "අලුතින් සාදාගන්න (Register)";
-            document.getElementById('authError').innerText = "";
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('installBanner').style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
         }
 
-        // Authentication Handler (Login / Register)
-        function handleAuthAction() {
-            let email = document.getElementById('authEmail').value.trim();
-            let pass = document.getElementById('authPass').value;
-            let err = document.getElementById('authError');
+        window.onload = function() {
+            // Check if user already exists, if not set a default demo account
+            if(!localStorage.getItem('sysPass')) {
+                localStorage.setItem('sysPass', '1234');
+                localStorage.setItem('empName', 'අභිනේශ්');
+                localStorage.setItem('empEmail', 'admin@office.com');
+                localStorage.setItem('empPhone', '0771234567');
+            }
 
-            if(!email || !pass) {
-                err.innerText = "කරුණාකර ඊමේල් ලිපිනය සහ මුරපදය ඇතුළත් කරන්න!";
+            if(localStorage.getItem('isLoggedIn') === "true") {
+                switchScreen('dashboardScreen');
+                showDashboard();
+            } else {
+                switchScreen('loginScreen');
+            }
+            let savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        };
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen-box').forEach(el => el.classList.remove('active-screen'));
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function handleRegister() {
+            let name = document.getElementById('regName').value.trim();
+            let email = document.getElementById('regEmail').value.trim();
+            let phone = document.getElementById('regPhone').value.trim();
+            let pass = document.getElementById('regPass').value;
+            let err = document.getElementById('regError');
+
+            if(!name || !email || !phone || !pass) {
+                err.innerText = "කරුණාකර සියලුම තොරතුරු ඇතුළත් කරන්න!";
                 return;
             }
 
-            if(isRegisterMode) {
-                auth.createUserWithEmailAndPassword(email, pass)
-                    .then((userCredential) => {
-                        alert("ගිණුම සාර්ථකව සාදන ලදී!");
-                        showDashboard(userCredential.user);
-                    })
-                    .catch((error) => { err.innerText = error.message; });
+            localStorage.setItem('empName', name);
+            localStorage.setItem('empEmail', email);
+            localStorage.setItem('empPhone', phone);
+            localStorage.setItem('sysPass', pass);
+
+            alert("ගිණුම සාර්ථකව සාදන ලදී! දැන් ඔබට ලොග් විය හැක.");
+            switchScreen('loginScreen');
+        }
+
+        function handleLogin() {
+            let identifier = document.getElementById('loginIdentifier').value.trim();
+            let pass = document.getElementById('loginPass').value;
+            let err = document.getElementById('loginError');
+
+            let savedEmail = localStorage.getItem('empEmail') || '';
+            let savedPhone = localStorage.getItem('empPhone') || '';
+            let currentPass = localStorage.getItem('sysPass') || '1234';
+
+            let isEmailMatch = (identifier.toLowerCase() === savedEmail.toLowerCase());
+            let isPhoneMatch = (identifier === savedPhone);
+
+            if((isEmailMatch || isPhoneMatch) && pass === currentPass) {
+                localStorage.setItem('isLoggedIn', 'true');
+                switchScreen('dashboardScreen');
+                showDashboard();
             } else {
-                auth.signInWithEmailAndPassword(email, pass)
-                    .then((userCredential) => {
-                        showDashboard(userCredential.user);
-                    })
-                    .catch((error) => { err.innerText = "වැරදි ඊමේල් ලිපිනයක් හෝ මුරපදයකි!"; });
+                err.innerText = "ඇතුළත් කළ ඊමේල්/දුරකථන අංකය හෝ මුරපදය වැරදිය!";
             }
         }
 
         function handleLogout() {
-            auth.signOut().then(() => {
-                document.getElementById('dashboardScreen').style.display = 'none';
-                document.getElementById('authScreen').style.display = 'flex';
-                document.getElementById('authEmail').value = "";
-                document.getElementById('authPass').value = "";
-            });
+            localStorage.removeItem('isLoggedIn');
+            switchScreen('loginScreen');
+            document.getElementById('loginIdentifier').value = "";
+            document.getElementById('loginPass').value = "";
         }
 
-        // Auth State Listener
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                showDashboard(user);
-            } else {
-                document.getElementById('authScreen').style.display = 'flex';
-                document.getElementById('dashboardScreen').style.display = 'none';
-            }
-        });
-
-        function showDashboard(user) {
-            currentUserUid = user.uid;
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('dashboardScreen').style.display = 'block';
-            loadUserDataFromCloud();
-        }
-
-        // Save Data to Cloud (Firestore)
-        function saveUserDataToCloud() {
-            if (!currentUserUid) return;
-            let name = document.getElementById('profileName').value;
-            let phone = document.getElementById('profilePhone').value;
-            let desig = document.getElementById('profileDesig').value;
-            let basic = parseFloat(document.getElementById('basicSalary').value) || 0;
-            let expense = parseFloat(document.getElementById('monthExpense').value) || 0;
-
-            let netSalary = basic - expense;
-            document.getElementById('topNetSalary').innerText = "Rs. " + netSalary;
-            document.getElementById('topYearlySavings').innerText = "Rs. " + (netSalary * 12);
-
-            db.collection("users").doc(currentUserUid).set({
-                name, phone, desig, basic, expense, netSalary
-            }, { merge: true }).then(() => {
-                alert("දත්ත සාර්ථකව ක්ලවුඩ් එකේ සුරකින ලදී!");
-            });
-        }
-
-        // Load Data from Cloud
-        function loadUserDataFromCloud() {
-            db.collection("users").doc(currentUserUid).get().then((doc) => {
-                if (doc.exists) {
-                    let data = doc.data();
-                    document.getElementById('profileName').value = data.name || '';
-                    document.getElementById('profilePhone').value = data.phone || '';
-                    document.getElementById('profileDesig').value = data.desig || '';
-                    document.getElementById('basicSalary').value = data.basic || '';
-                    document.getElementById('monthExpense').value = data.expense || '';
-                    
-                    let net = data.netSalary || 0;
-                    document.getElementById('topNetSalary').innerText = "Rs. " + net;
-                    document.getElementById('topYearlySavings').innerText = "Rs. " + (net * 12);
-                }
-                loadTasksFromCloud();
-            });
-        }
-
-        // Task Manager with Cloud
-        function addTaskToCloud() {
-            let taskText = document.getElementById('taskInput').value.trim();
-            if(!taskText) return;
-
-            db.collection("users").doc(currentUserUid).collection("tasks").add({
-                text: new Date().toLocaleDateString() + " - " + taskText,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById('taskInput').value = "";
-                loadTasksFromCloud();
-            });
-        }
-
-        function loadTasksFromCloud() {
-            let list = document.getElementById('taskList');
-            list.innerHTML = "";
-            db.collection("users").doc(currentUserUid).collection("tasks").get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    let li = document.createElement('li');
-                    li.textContent = doc.data().text;
-                    list.appendChild(li);
-                });
-            });
+        function showDashboard() {
+            loadSavedData();
+            calculateAll();
         }
 
         function toggleTheme() {
             let current = document.body.getAttribute('data-theme');
             let next = current === 'light' ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', next);
-            document.getElementById('themeBtn').innerText = next === 'light' ? '🌙 Dark' : '☀️ Light';
+            setTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            let btn = document.getElementById('themeBtn');
+            if(btn) btn.innerText = theme === 'light' ? '🌙 Dark' : '☀️ Light';
+        }
+
+        function toggleEditProfile() {
+            let view = document.getElementById('profileView');
+            let edit = document.getElementById('profileEdit');
+            let passSec = document.getElementById('passwordEdit');
+            passSec.style.display = 'none';
+            edit.style.display = edit.style.display === 'none' ? 'block' : 'none';
+            view.style.display = view.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function togglePasswordSection() {
+            let view = document.getElementById('profileView');
+            let edit = document.getElementById('profileEdit');
+            let passSec = document.getElementById('passwordEdit');
+            edit.style.display = 'none';
+            passSec.style.display = passSec.style.display === 'none' ? 'block' : 'none';
+            view.style.display = view.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function saveProfile() {
+            localStorage.setItem('empName', document.getElementById('editName').value);
+            localStorage.setItem('empEmail', document.getElementById('editEmail').value);
+            localStorage.setItem('empPhone', document.getElementById('editPhone').value);
+            localStorage.setItem('empDob', document.getElementById('editDob').value);
+            localStorage.setItem('empDesig', document.getElementById('editDesig').value);
+            loadProfileData();
+            toggleEditProfile();
+            alert("තොරතුරු සාර්ථකව සුරකින ලදී!");
+        }
+
+        function updatePassword() {
+            let currInput = document.getElementById('currPassInput').value;
+            let newPass = document.getElementById('newPassInput').value;
+            let savedPass = localStorage.getItem('sysPass') || '1234';
+
+            if(currInput !== savedPass) { alert("වත්මන් මුරපදය වැරදිය!"); return; }
+            if(!newPass || newPass.length < 4) { alert("නව මුරපදය අක්ෂර 4කට වඩා වැඩි විය යුතුය!"); return; }
+
+            localStorage.setItem('sysPass', newPass);
+            document.getElementById('currPassInput').value = "";
+            document.getElementById('newPassInput').value = "";
+            togglePasswordSection();
+            alert("මුරපදය සාර්ථකව වෙනස් කරන ලදී!");
+        }
+
+        function loadProfileData() {
+            let name = localStorage.getItem('empName') || 'අභිනේශ්';
+            let email = localStorage.getItem('empEmail') || '';
+            let phone = localStorage.getItem('empPhone') || '';
+            let dob = localStorage.getItem('empDob') || '';
+            let desig = localStorage.getItem('empDesig') || 'Admin / Staff';
+
+            document.getElementById('dispName').innerText = name;
+            document.getElementById('dispEmail').innerText = email;
+            document.getElementById('dispPhone').innerText = phone;
+            document.getElementById('dispDob').innerText = dob ? dob : 'දමා නැත';
+            document.getElementById('dispDesig').innerText = desig;
+
+            if(dob) {
+                let age = Math.abs(new Date(Date.now() - new Date(dob).getTime()).getUTCFullYear() - 1970);
+                document.getElementById('dispAge').innerText = age + " වසර / Years";
+            } else {
+                document.getElementById('dispAge').innerText = '-';
+            }
+
+            document.getElementById('editName').value = name;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editPhone').value = phone;
+            document.getElementById('editDob').value = dob;
+            document.getElementById('editDesig').value = desig;
+        }
+
+        function toggleAttendance() {
+            let statusText = document.getElementById('currentStatus');
+            let btn = document.getElementById('inOutBtn');
+            let rateInput = parseFloat(document.getElementById('hourlyRate').value) || 0;
+
+            if (!isClockedIn) {
+                isClockedIn = true;
+                clockInTime = new Date();
+                statusText.innerText = "වැඩ කරමින් පවතී... / Clocked In at: " + clockInTime.toLocaleTimeString();
+                statusText.style.color = "var(--success)";
+                btn.innerText = "වැඩ අවසන් කිරීම / Clock Out";
+                btn.className = "btn btn-danger";
+            } else {
+                let diffHours = ((new Date() - clockInTime) / (1000 * 60 * 60)).toFixed(1);
+                todayTotalOT = diffHours * rateInput;
+                localStorage.setItem('savedOT', todayTotalOT);
+                localStorage.setItem('lastHours', diffHours);
+
+                document.getElementById('otSummaryText').innerText = "වැඩ කළ පැය: " + diffHours + " | OT මුදල: Rs. " + todayTotalOT;
+                isClockedIn = false;
+                statusText.innerText = "දැනට වැඩ අවසන් / Not Clocked In";
+                statusText.style.color = "var(--danger)";
+                btn.innerText = "වැඩට පැමිණීම සටහන් කරන්න / Clock In";
+                btn.className = "btn btn-success";
+                calculateAll();
+            }
+        }
+
+        function calculateAll() {
+            let basic = parseFloat(document.getElementById('basicSalary').value) || 0;
+            let expense = parseFloat(document.getElementById('monthExpense').value) || 0;
+            let ot = parseFloat(localStorage.getItem('savedOT')) || 0;
+
+            let netSalary = (basic + ot) - expense;
+            document.getElementById('topNetSalary').innerText = "Rs. " + netSalary;
+            document.getElementById('topYearlySavings').innerText = "Rs. " + (netSalary * 12);
+
+            localStorage.setItem('netSalary', netSalary);
+            localStorage.setItem('basicVal', basic);
+            localStorage.setItem('expenseVal', expense);
+        }
+
+        function saveMonthlyHistory() {
+            let month = document.getElementById('selectMonth').value;
+            let net = localStorage.getItem('netSalary') || 0;
+            let history = JSON.parse(localStorage.getItem('history')) || [];
+            history.push(month + " - Net Salary: Rs. " + net);
+            localStorage.setItem('history', JSON.stringify(history));
+            loadHistory();
+            alert(month + " මසේ වාර්තාව ඉතිහාසයට එක් කළා!");
+        }
+
+        function loadHistory() {
+            let list = document.getElementById('historyList');
+            if(!list) return;
+            list.innerHTML = "";
+            let history = JSON.parse(localStorage.getItem('history')) || [];
+            history.forEach((h, index) => {
+                let li = document.createElement('li');
+                li.innerHTML = `<span>${h}</span> <button class="delete-item" onclick="deleteHistory(${index})">Delete</button>`;
+                list.appendChild(li);
+            });
+        }
+
+        function deleteHistory(index) {
+            let history = JSON.parse(localStorage.getItem('history')) || [];
+            history.splice(index, 1);
+            localStorage.setItem('history', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function saveTask() {
+            let task = document.getElementById('taskInput').value;
+            if(task.trim() !== "") {
+                let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                tasks.push(new Date().toLocaleDateString() + " - " + task);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                document.getElementById('taskInput').value = "";
+                loadTasks();
+            } else {
+                alert("කරුණාකර වැඩ විස්තරයක් ලියන්න!");
+            }
+        }
+
+        function loadTasks() {
+            let list = document.getElementById('taskList');
+            if(!list) return;
+            list.innerHTML = "";
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.forEach((t, index) => {
+                let li = document.createElement('li');
+                li.innerHTML = `<span>${t}</span> <button class="delete-item" onclick="deleteTask(${index})">Delete</button>`;
+                list.appendChild(li);
+            });
+        }
+
+        function deleteTask(index) {
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            loadTasks();
+        }
+
+        function downloadPDFReport() {
+            let name = localStorage.getItem('empName') || 'N/A';
+            let email = localStorage.getItem('empEmail') || 'N/A';
+            let phone = localStorage.getItem('empPhone') || 'N/A';
+            let netSalary = localStorage.getItem('netSalary') || '0';
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+            let printWindow = window.open('', '', 'height=700,width=700');
+            printWindow.document.write('<html><head><title>Office Staff Report</title><style>body { font-family: Arial, sans-serif; padding: 30px; }</style></head><body>');
+            printWindow.document.write('<h1>Office Staff Pro - Report</h1>');
+            printWindow.document.write('<p><strong>නම / Name:</strong> ' + name + '</p>');
+            printWindow.document.write('<p><strong>ඊමේල් / Email:</strong> ' + email + '</p>');
+            printWindow.document.write('<p><strong>දුරකථන අංකය / Phone:</strong> ' + phone + '</p>');
+            printWindow.document.write('<p><strong>ශුද්ධ මාසික වැටුප:</strong> Rs. ' + netSalary + '</p>');
+            printWindow.document.write('<h3>දවසේ වැඩ සටහන්:</h3><ul>');
+            tasks.forEach(t => printWindow.document.write('<li>' + t + '</li>'));
+            printWindow.document.write('</ul></body></html>');
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+        }
+
+        function downloadBackup() {
+            let backupData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                backupData[localStorage.key(i)] = localStorage.getItem(localStorage.key(i));
+            }
+            let link = document.createElement('a');
+            link.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+            link.download = "office_staff_backup.json";
+            link.click();
+        }
+
+        function restoreBackup(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let backupData = JSON.parse(e.target.result);
+                    for (let key in backupData) { localStorage.getItem(key, backupData[key]); }
+                    alert("Backup එක සාර්ථකව Restore විය! පද්ධතිය නැවත පූරණය වේ.");
+                    location.reload();
+                } catch (err) { alert("දෝෂයක් ඇත!"); }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportDataToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Category,Details\n" +
+                "Employee Name,\"" + (localStorage.getItem('empName') || '') + "\"\n" +
+                "Net Monthly Salary,Rs. " + (localStorage.getItem('netSalary') || 0) + "\n";
+            let link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "office_staff_report.csv");
+            link.click();
+        }
+
+        function loadSavedData() {
+            loadTasks();
+            loadHistory();
+            loadProfileData();
+            if(localStorage.getItem('basicVal')) document.getElementById('basicSalary').value = localStorage.getItem('basicVal');
+            if(localStorage.getItem('expenseVal')) document.getElementById('monthExpense').value = localStorage.getItem('expenseVal');
+            let lastHrs = localStorage.getItem('lastHours') || 0;
+            if(lastHrs) {
+                document.getElementById('otSummaryText').innerText = "වැඩ කළ පැය: " + lastHrs + " | OT මුදල: Rs. " + (localStorage.getItem('savedOT') || 0);
+            }
+        }
+
+        function clearAllData() {
+            if(confirm("ඔබට සියලුම දත්ත මකා දැමීමට අවශ්‍යද?")) {
+                localStorage.clear();
+                location.reload();
+            }
         }
     </script>
 </body>
